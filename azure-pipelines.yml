@@ -11,7 +11,7 @@ resources:
 variables:
 
   # Container registry service connection established during pipeline creation
-  dockerRegistryServiceConnection: 'fea4bd32-08d8-444c-8eec-0a9bf18ac969'
+  dockerRegistryServiceConnection: 'djangoapp-acr-connection'  # Replace with your actual service connection name
   imageRepository: 'djangoaksapp'
   containerRegistry: 'djangoappacr-cge6gyhjgydubtef.azurecr.io'
   dockerfilePath: '**/Dockerfile'
@@ -31,15 +31,24 @@ stages:
     pool:
       vmImage: $(vmImageName)
     steps:
-    - task: Docker@2
-      displayName: Build and push an image to container registry
+    # Alternative: Use Azure CLI to build and push
+    - task: AzureCLI@2
+      displayName: 'Build and push Docker image using Azure CLI'
       inputs:
-        command: buildAndPush
-        repository: $(imageRepository)
-        dockerfile: $(dockerfilePath)
-        containerRegistry: $(dockerRegistryServiceConnection)
-        tags: |
-          $(tag)
+        azureSubscription: 'your-azure-subscription-service-connection'  # Replace with your Azure subscription service connection
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          # Login to ACR
+          az acr login --name djangoappacr-cge6gyhjgydubtef
+          
+          # Build the image
+          docker build -t $(containerRegistry)/$(imageRepository):$(tag) .
+          
+          # Push the image
+          docker push $(containerRegistry)/$(imageRepository):$(tag)
+          
+          echo "Image pushed: $(containerRegistry)/$(imageRepository):$(tag)"
 
     - upload: manifests
       artifact: manifests
@@ -58,17 +67,29 @@ stages:
       runOnce:
         deploy:
           steps:
-          - task: KubernetesManifest@0
-            displayName: Create imagePullSecret
+          # Alternative: Create image pull secret using kubectl
+          - task: AzureCLI@2
+            displayName: 'Create imagePullSecret and deploy'
             inputs:
-              action: createSecret
-              secretName: $(imagePullSecret)
-              dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
+              azureSubscription: 'your-azure-subscription-service-connection'  # Replace with your Azure subscription service connection
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                # Get AKS credentials
+                az aks get-credentials --resource-group your-resource-group --name your-aks-cluster --overwrite-existing
+                
+                # Create image pull secret
+                kubectl create secret docker-registry $(imagePullSecret) \
+                  --docker-server=$(containerRegistry) \
+                  --docker-username=$(az acr credential show --name djangoappacr-cge6gyhjgydubtef --query username -o tsv) \
+                  --docker-password=$(az acr credential show --name djangoappacr-cge6gyhjgydubtef --query "passwords[0].value" -o tsv) \
+                  --dry-run=client -o yaml | kubectl apply -f -
 
           - task: KubernetesManifest@0
             displayName: Deploy to Kubernetes cluster
             inputs:
               action: deploy
+              kubernetesServiceConnection: 'your-aks-service-connection'  # Replace with your AKS service connection
               manifests: |
                 $(Pipeline.Workspace)/manifests/deployment.yml
                 $(Pipeline.Workspace)/manifests/service.yml
