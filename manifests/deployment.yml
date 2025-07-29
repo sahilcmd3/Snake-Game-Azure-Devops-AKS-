@@ -1,0 +1,19 @@
+apiVersion : apps/v1
+kind: Deployment
+metadata:
+  name: sahilcmddjangoapp 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sahilcmddjangoapp
+  template:
+    metadata:
+      labels:
+        app: sahilcmddjangoapp 
+    spec:
+      containers:
+        - name: sahilcmddjangoapp 
+          image: djangoappacr.azurecr.io/sahilcmddjangoapp
+          ports:
+          - containerPort: 8000
