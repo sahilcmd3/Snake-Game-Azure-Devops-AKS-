@@ -1,0 +1,19 @@
+apiVersion : apps/v1
+kind: Deployment
+metadata:
+  name: sahilcmdsnakegameazuredevopsaks 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sahilcmdsnakegameazuredevopsaks
+  template:
+    metadata:
+      labels:
+        app: sahilcmdsnakegameazuredevopsaks 
+    spec:
+      containers:
+        - name: sahilcmdsnakegameazuredevopsaks 
+          image: snakegamesahil-arhqgyhfezejdzf7.azurecr.io/sahilcmdsnakegameazuredevopsaks
+          ports:
+          - containerPort: 8000
