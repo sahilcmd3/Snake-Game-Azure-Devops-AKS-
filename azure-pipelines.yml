@@ -13,10 +13,10 @@ variables:
   # Container registry service connection established during pipeline creation
   dockerRegistryServiceConnection: 'e6723118-6625-424f-87e7-86babd39fb9c'
   imageRepository: 'sahilcmddjangoapp'
-  containerRegistry: 'djangoappacr.azurecr.io'
+  containerRegistry: 'snakegamesahil.azurecr.io'
   dockerfilePath: '**/Dockerfile'
   tag: '$(Build.BuildId)'
-  imagePullSecret: 'djangoappacr12247b8d-auth'
+  imagePullSecret: 'snakegamesahil-auth'
 
   # Agent VM image name
   vmImageName: 'ubuntu-latest'
